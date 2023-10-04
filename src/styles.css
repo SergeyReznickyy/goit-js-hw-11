@@ -93,6 +93,13 @@ body {
 .load-more {
   margin-left: 46%;
 }
+.info {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  font-size: 12px;
+  display: flex;
+}
 .hidden {
   display: none;
 }
