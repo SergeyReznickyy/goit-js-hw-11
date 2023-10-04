@@ -4,6 +4,8 @@ import 'simplelightbox/dist/simple-lightbox.min.css';
 
 import { pixabayApi } from './PixabayApi';
 
+const lightbox = new SimpleLightbox('.gallery a');
+
 document.addEventListener('DOMContentLoaded', function () {
   const searchForm = document.getElementById('search-form');
   const galleryContainer = document.querySelector('.gallery');
@@ -26,10 +28,13 @@ document.addEventListener('DOMContentLoaded', function () {
       const response = await pixabayApi(searchQuery, perPage, currentPage);
       const images = response.data;
 
+      const totalHits = parseInt(images.totalHits);
+
       galleryContainer.textContent = '';
 
       if (images.hits.length === 0) {
         showNoResultsMessage();
+        hideLoadMoreButton();
         return;
       }
 
@@ -47,16 +52,40 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  //   loadMoreButton.addEventListener('click', async function (event) {
+  //     try {
+  //       const response = await pixabayApi(searchQuery, perPage, currentPage);
+  //       const images = response.data;
+
+  //       displayImages(images.hits);
+  //       if (images.totalHits > currentPage * perPage) {
+  //         currentPage++;
+  //       } else {
+  //         hideLoadMoreButton();
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //       showErrorMessage();
+  //     }
+  //   });
   loadMoreButton.addEventListener('click', async function (event) {
     try {
       const response = await pixabayApi(searchQuery, perPage, currentPage);
       const images = response.data;
 
-      displayImages(images.hits);
-      if (images.totalHits > currentPage * perPage) {
-        currentPage++;
+      if (images.hits.length > 0) {
+        displayImages(images.hits);
+        const remainingImages = images.totalHits - currentPage * perPage;
+        if (remainingImages > 0) {
+          const message = `Hooray! ${remainingImages} images remaining.`;
+          Notiflix.Notify.success(message);
+          currentPage++;
+        } else {
+          hideLoadMoreButton();
+        }
       } else {
         hideLoadMoreButton();
+        Notiflix.Notify.info('No more images to load.');
       }
     } catch (error) {
       console.error(error);
@@ -69,7 +98,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const card = document.createElement('div');
       card.className = 'photo-card';
       card.innerHTML = `
-      <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
+      <a href="${image.webformatURL}" class="card-img">
+        <div>
+            <img class="img" src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
+        </div>
+      </a>
       <div class="info">
         <p class="info-item"><b>Likes: </b>${image.likes}</p>
         <p class="info-item"><b>Views: </b>${image.views}</p>
@@ -79,6 +112,8 @@ document.addEventListener('DOMContentLoaded', function () {
     `;
       galleryContainer.appendChild(card);
     });
+
+    lightbox.refresh();
   }
 
   function showNoResultsMessage() {
